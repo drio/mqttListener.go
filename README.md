@@ -6,6 +6,8 @@ at home to detect when my door outside opens.
 Besides the code for the tool (`/cmd/mqttListener`), it also contains some ansible bits to 
 deploy the tool as a service in raspberry pi (tested on version 3).
 
+Notice this has only been tested on a raspberry pi3 hardware.
+
 ## Usage
 
 1. Modify the config.yml to your liking.
