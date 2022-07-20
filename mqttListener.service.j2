@@ -1,0 +1,10 @@
+[Unit]
+Description={{ tool_name }} service
+
+[Service]
+User={{ tool_name }}
+Group={{ tool_name }}
+ExecStart=/usr/local/bin/{{ tool_name }} -url='{{ mqtt_url }}' -user='{{ mqtt_user }}' -password='{{ mqtt_pass}}' -sounds='{{ sounds_dir }}'
+
+[Install]
+WantedBy=multi-user.target

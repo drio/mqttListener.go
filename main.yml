@@ -1,0 +1,66 @@
+#!/usr/bin/env ansible-playbook
+---
+- hosts: ironfist
+  become: true
+
+  pre_tasks:
+    - name: Load configuration (with defaults from example file).
+      ansible.builtin.include_vars: "{{ item }}"
+      loop:
+        - config.drio.yml
+      tags:
+        - always
+
+  handlers:
+    - name: Start service
+      systemd:
+        name: "{{ tool_name }}"
+        state: started
+        enabled: yes
+
+  tasks:
+    - name: create group
+      group:
+        name: "{{ tool_name }}"
+        state: present
+
+    - name: create user
+      user:
+        name: "{{ tool_name }}"
+        groups: "{{ tool_name }}"
+        shell: /sbin/nologin
+        append: yes
+        state: present
+        createhome: no
+
+    - name: copy sounds
+      copy:
+        src: "./cmd/{{ tool_name }}/sounds"
+        dest: "/opt"
+        owner: "{{ tool_name }}"
+        group: "{{ tool_name }}"
+        mode: u+rw,g-wx,o-rwx
+      tags: [ "sounds", "never" ]
+
+    - name: Copy systemd service file to server
+      ansible.builtin.template:
+        src: "{{ tool_name }}.service.j2"
+        dest: "/etc/systemd/system/{{ tool_name }}.service"
+        owner: root
+        group: root
+        mode: 0644
+ 
+    - name: Copy binary to server
+      copy:
+        src: "{{ tool_name }}"
+        dest: /usr/local/bin
+        mode: 0755
+        owner: root
+        group: root
+      notify:
+        - Start service
+
+    - name: Make sure the service is running
+      ansible.builtin.systemd:
+        state: started
+        name: "{{ tool_name }}"
