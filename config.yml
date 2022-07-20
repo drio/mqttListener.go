@@ -3,3 +3,8 @@
 config_dir: '~'
 
 tool_name: mqttListener
+
+sounds_dir: /opt/sounds
+mqtt_url: tcp://192.168.1.180:1883
+mqtt_user: foo
+mqtt_pass: bar
