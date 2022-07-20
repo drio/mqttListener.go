@@ -11,10 +11,12 @@ build:
 deploy: build
 	ansible-playbook -i ./inventory.ini main.yml --tags=sounds
 	ansible-playbook -i ./inventory.ini main.yml
+	rm -f $(NAME)
 
 .PHONY: deploy
 deploy-no-sounds: build
 	ansible-playbook -i ./inventory.ini main.yml
+	rm -f $(NAME)
 
 pub:
 	mosquitto_pub -u $(MQTT_USER) -P $(MQTT_PASS) -t '$(TOPIC)' -m 'open' -h $(MQTT_HOST)
