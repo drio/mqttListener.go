@@ -1,5 +1,6 @@
 NAME=mqttListener
-MQTT_HOST=100.85.32.58
+# gopher
+MQTT_HOST=192.168.8.180
 TOPIC=zigbee2mqtt/aquara-door-01
 PAYLOAD_OPEN={"contact":false}
 PAYLOAD_CLOSE={"contact":true}
