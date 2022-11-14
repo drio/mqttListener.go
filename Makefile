@@ -1,6 +1,10 @@
 NAME=mqttListener
-MQTT_HOST=192.168.8.180
-TOPIC=shellies/shellydw2-1/sensor/state
+MQTT_HOST=100.85.32.58
+TOPIC=zigbee2mqtt/aquara-door-01
+PAYLOAD_OPEN={"contact":false}
+PAYLOAD_CLOSE={"contact":true}
+#PUB=mosquitto_pub -u $(MQTT_USER) -P $(MQTT_PASS)  -m 'open' -h $(MQTT_HOST) -t '$(TOPIC)'
+PUB=mosquitto_pub -u $(MQTT_USER) -P $(MQTT_PASS)  -h $(MQTT_HOST) -t '$(TOPIC)' -m
 
 .PHONY: build
 build:
@@ -18,5 +22,8 @@ deploy-no-sounds: build
 	ansible-playbook -i ./inventory.ini main.yml
 	rm -f $(NAME)
 
-pub:
-	mosquitto_pub -u $(MQTT_USER) -P $(MQTT_PASS) -t '$(TOPIC)' -m 'open' -h $(MQTT_HOST)
+pub/open:
+	$(PUB) '$(PAYLOAD_OPEN)'
+
+pub/close:
+	$(PUB) '$(PAYLOAD_CLOSE)'

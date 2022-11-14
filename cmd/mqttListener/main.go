@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -16,6 +17,11 @@ import (
 )
 
 const version = "0.0.1"
+const mqttTopicDefault = "zigbee2mqtt/aquara-door-01"
+
+type jsonPayload struct {
+	Contact bool `json:"contact"`
+}
 
 func detectPlayer() string {
 	player := "/usr/bin/aplay"
@@ -44,7 +50,7 @@ func genPlaySong(player, songPath string) func() {
 	}
 }
 
-func startMQTT(url string, user string, pass string, topic string, songPlayer func()) mqtt.Client {
+func startMQTT(url string, user string, pass string, topic string, playOpen, playClose func()) mqtt.Client {
 	//mqtt.DEBUG = log.New(os.Stdout, "", 0)
 	mqtt.ERROR = log.New(os.Stdout, "", 0)
 	hostname, _ := os.Hostname()
@@ -55,9 +61,21 @@ func startMQTT(url string, user string, pass string, topic string, songPlayer fu
 	opts.SetPassword(pass)
 
 	onMessageReceived := (func(client mqtt.Client, msg mqtt.Message) {
-		if string(msg.Payload()) == "open" {
-			log.Println("Door opened. Playing sound.")
-			songPlayer()
+		var jp jsonPayload
+		err := json.Unmarshal([]byte(msg.Payload()), &jp)
+		if err != nil {
+			log.Printf("Error processing payload: %s", err)
+			return
+		}
+
+		if jp.Contact {
+			log.Println("Door CLOSED. Playing sound.")
+			playClose()
+		}
+
+		if !jp.Contact {
+			log.Println("Door OPEN. Playing sound.")
+			playOpen()
 		}
 	})
 
@@ -85,7 +103,7 @@ func main() {
 	url := flag.String("url", "tcp://192.168.8.180:1883", "MQTT server url")
 	user := flag.String("user", "shelly", "MQTT username")
 	pass := flag.String("password", "", "MQTT password")
-	topic := flag.String("topic", "shellies/shellydw2-1/sensor/state", "MQTT topic to subscribe to")
+	topic := flag.String("topic", mqttTopicDefault, "MQTT topic to subscribe to")
 	soundsDir := flag.String("sounds", "/opt/sounds", "Sounds directory")
 	flag.Parse()
 
@@ -101,12 +119,13 @@ func main() {
 	log.Printf("sound dir is: %s", *soundsDir)
 
 	player := detectPlayer()
-	playCoin := genPlaySong(player, fmt.Sprintf("%s/coin.wav", *soundsDir))
+	playOpen := genPlaySong(player, fmt.Sprintf("%s/coin.wav", *soundsDir))
 	playDream := genPlaySong(player, fmt.Sprintf("%s/dream.wav", *soundsDir))
+	playClose := genPlaySong(player, fmt.Sprintf("%s/newstart.wav", *soundsDir))
 	log.Println("Starting ...")
 	playDream()
 
-	startMQTT(*url, *user, *pass, *topic, playCoin)
+	startMQTT(*url, *user, *pass, *topic, playOpen, playClose)
 
 	<-c
 	log.Println("Bye")
