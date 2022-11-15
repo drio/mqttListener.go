@@ -1,10 +1,10 @@
 NAME=mqttListener
 # gopher
-MQTT_HOST=192.168.8.180
+MQTT_HOST?=192.168.8.180
 TOPIC=zigbee2mqtt/aquara-door-01
 PAYLOAD_OPEN={"contact":false}
 PAYLOAD_CLOSE={"contact":true}
-PUB=mosquitto_pub -u $(MQTT_USER) -P $(MQTT_PASS)  -h $(MQTT_HOST) -t '$(TOPIC)' -m
+PUB=mosquitto_pub -u $(MQTT_USER) -P $(MQTT_PASS) -h $(MQTT_HOST) -t '$(TOPIC)' -m
 
 .PHONY: build
 build:

@@ -18,6 +18,7 @@ import (
 
 const version = "0.0.1"
 const mqttTopicDefault = "zigbee2mqtt/aquara-door-01"
+const secondsToConsiderDoorClose = 300
 
 type jsonPayload struct {
 	Contact bool `json:"contact"`
@@ -60,6 +61,7 @@ func startMQTT(url string, user string, pass string, topic string, playOpen, pla
 	opts.SetUsername(user)
 	opts.SetPassword(pass)
 
+	lastOpened := time.Now()
 	onMessageReceived := (func(client mqtt.Client, msg mqtt.Message) {
 		var jp jsonPayload
 		err := json.Unmarshal([]byte(msg.Payload()), &jp)
@@ -68,14 +70,20 @@ func startMQTT(url string, user string, pass string, topic string, playOpen, pla
 			return
 		}
 
-		if jp.Contact {
+		doorClosed := jp.Contact
+		elapsed := time.Now().Sub(lastOpened).Seconds()
+		if doorClosed && elapsed < secondsToConsiderDoorClose {
 			log.Println("Door CLOSED. Playing sound.")
 			playClose()
+		} else {
+			log.Println("Got a door close event but not enough time has passed since door was opened")
 		}
 
-		if !jp.Contact {
+		doorOpened := !jp.Contact
+		if doorOpened {
 			log.Println("Door OPEN. Playing sound.")
 			playOpen()
+			lastOpened = time.Now()
 		}
 	})
 
