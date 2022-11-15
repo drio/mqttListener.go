@@ -61,7 +61,7 @@ func startMQTT(url string, user string, pass string, topic string, playOpen, pla
 	opts.SetUsername(user)
 	opts.SetPassword(pass)
 
-	lastOpened := time.Now()
+	doorIsOpen := false
 	onMessageReceived := (func(client mqtt.Client, msg mqtt.Message) {
 		var jp jsonPayload
 		err := json.Unmarshal([]byte(msg.Payload()), &jp)
@@ -70,20 +70,20 @@ func startMQTT(url string, user string, pass string, topic string, playOpen, pla
 			return
 		}
 
-		doorClosed := jp.Contact
-		elapsed := time.Now().Sub(lastOpened).Seconds()
-		if doorClosed && elapsed < secondsToConsiderDoorClose {
+		closeEvent := jp.Contact
+		if closeEvent && doorIsOpen {
 			log.Println("Door CLOSED. Playing sound.")
 			playClose()
+			doorIsOpen = false
 		} else {
-			log.Println("Got a door close event but not enough time has passed since door was opened")
+			log.Println("Got a door close event but door was not open")
 		}
 
-		doorOpened := !jp.Contact
-		if doorOpened {
+		openEvent := !jp.Contact
+		if openEvent {
 			log.Println("Door OPEN. Playing sound.")
 			playOpen()
-			lastOpened = time.Now()
+			doorIsOpen = true
 		}
 	})
 
